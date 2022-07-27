@@ -1,7 +1,8 @@
 from flask import Flask, render_template, jsonify,request
 from flask_migrate import Migrate
 from flask_cors import CORS
-from models import db, User, Profile
+from models import db, User, Profile, Contact
+
 
 
 
@@ -33,7 +34,7 @@ def main():
 @app.route('/api/users', methods=['GET'])
 def get_users():
     users = User.query.all()
-    users = list(map(lambda user: user.serialize()serialize_with_profile, users))
+    users = list(map(lambda user: user.serialize_with_profile(), users))
 
     return jsonify(users), 200
 
@@ -103,12 +104,45 @@ def put_users(id):
     email =request.json.get('email')
     password =request.json.get('password')
 
+    bio =request.json.get('bio', "")
+    twitter =request.json.get('twitter', "")
+    facebook =request.json.get('facebook', "")
+    instagram =request.json.get('instagram', "")
+    linkedin =request.json.get('linkedin', "")
+
+    """
     user = User.query.get(id)
     user.name = name
     user.lastname = lastname
     user.email = email
     user.password = password
     user.update()
+
+    profile = Profile.query.filter_by(user_id=user.id).first()
+
+    profile.twitter = twitter
+    profile.facebook = facebook
+    profile.instagram = instagram
+    profile.linkedin = linkedin
+    profile.update()
+    """
+
+    user = User.query.get(id)
+    user.name = name
+    user.lastname = lastname
+    user.email = email
+    user.password = password
+    user.profile.twitter = twitter
+    user.profile.facebook = facebook
+    user.profile.instagram = instagram
+    user.profile.linkedin = linkedin
+    user.update()
+
+
+
+
+
+
 
     return jsonify(user.serialize()), 200
 
@@ -127,6 +161,57 @@ def delete_users(id):
     return jsonify({"Status": True, "msg":"User deleted"}), 200
 
 
+
+
+#AQUI ESTOY CREANDO UNA SOLA RUTA
+
+@app.route("/api/user/<int:user_id>/contacts", methods=['GET','POST'])
+@app.route("/api/user/<int:user_id>/contacts/<int:contact_id>", methods=['GET','PUT', 'DELETE'])
+def contact_by_user(user_id, contact_id = None):
+    if request.methods =='GET':
+        if contact_id is not None:
+            contact= Contact.query.filter_by(user_id=user_id, id=contact_id).first()
+            if not contact: return jsonify({"Status": False, "msg":"Contact not found!"}), 404
+            return jsonify(contact.serialize()), 200
+        else:
+            contacts =Contact.query.filter_by(user_id=user_id)
+            contacts = list(map(lambda contact: contact.serialize(), contacts))
+            return jsonify(Contacts), 200 
+
+    if request.methods =='POST':
+        name = request.json.get("name")
+        phone_work = request.json.get("phone_work")
+        phone_home = request.json.get("phone_home","")
+        email = request.json.get("email", "")
+
+        contact = Contact()
+        contact.name = name
+        contact.phone_work = phone_work
+        contact.phone_home = phone_home
+        contact.email = email
+        contact.user_id = user_id
+        contact.save()
+
+        return jsonify (contact.serialize()), 201
+
+    if request.method =="PUT":
+
+        name = request.json.get("name")
+        phone_work = request.json.get("phone_work")
+        phone_home = request.json.get("phone_home","")
+        email = request.json.get("email", "")
+
+        contact= Contact.query.filter_by(user_id=user_id, id=contact_id).first()
+        if not contact: return jsonify({"Status": False, "msg":"Contact not found!"}), 404
+
+        contact.name = name
+        contact.phone_work = phone_work
+        contact.phone_home = phone_home
+        contact.email = email
+        contact.update()
+
+
+        return jsonify (contact.serialize()), 200
 
 
 
