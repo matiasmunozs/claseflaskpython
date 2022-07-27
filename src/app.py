@@ -88,7 +88,7 @@ def post_users():
     profile.facebook = facebook
     profile.instagram = instagram
     profile.linkedin = linkedin
-    user.profile = profile
+    user.profile = profile #usando el relationship creado
 
     user.save()
 
